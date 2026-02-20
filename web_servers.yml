@@ -1,0 +1,18 @@
+---
+- name: Configuration des serveurs en zone DMZ (VLAN 40)
+  hosts: DMZ
+  tasks:
+    - name: 1. Mise a jour APT et installation Apache + PHP
+      shell: |
+        sudo apt-get update
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install -y apache2 php php-mysql libapache2-mod-php
+
+    - name: 2. Activation du service Apache
+      shell: sudo systemctl enable --now apache2
+
+    - name: 3. Creation de la page de test PHP
+      shell: |
+        echo "<?php phpinfo(); ?>" | sudo tee /var/www/html/info.php
+
+    - name: 4. Verification du statut
+      shell: systemctl is-active apache2
