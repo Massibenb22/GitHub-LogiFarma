@@ -1,0 +1,7 @@
+---
+- name: Durcissement securite serveurs Linux
+  hosts: all
+  become: yes
+
+  roles:
+    - hardening

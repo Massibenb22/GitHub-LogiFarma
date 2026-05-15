@@ -1,0 +1,91 @@
+---
+- name: Mise a jour des paquets
+  apt:
+    update_cache: yes
+    upgrade: yes
+
+- name: Installer les outils de securite
+  apt:
+    name:
+      - iptables
+      - fail2ban
+      - portsentry
+      - rkhunter
+      - logwatch
+    state: present
+
+- name: Protection anti-flood TCP
+  iptables:
+    chain: FORWARD
+    protocol: tcp
+    syn: match
+    limit: 1/second
+    jump: ACCEPT
+
+- name: Protection anti-flood UDP
+  iptables:
+    chain: FORWARD
+    protocol: udp
+    limit: 1/second
+    jump: ACCEPT
+
+- name: Protection anti-scan de ports
+  iptables:
+    chain: FORWARD
+    protocol: tcp
+    tcp_flags:
+      flags: SYN,ACK,FIN,RST
+      flags_set: RST
+    limit: 1/second
+    jump: ACCEPT
+
+- name: Configurer Fail2ban - bantime
+  lineinfile:
+    path: /etc/fail2ban/jail.conf
+    regexp: "^bantime"
+    line: "bantime = {{ bantime }}"
+  notify: restart fail2ban
+
+- name: Configurer Fail2ban - maxretry
+  lineinfile:
+    path: /etc/fail2ban/jail.conf
+    regexp: "^maxretry"
+    line: "maxretry = {{ maxretry }}"
+  notify: restart fail2ban
+
+- name: Configurer port SSH dans sshd_config
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^#?Port"
+    line: "Port {{ ssh_port }}"
+  notify: restart ssh
+
+- name: Activer Rkhunter scan quotidien
+  lineinfile:
+    path: /etc/default/rkhunter
+    regexp: "^CRON_DAILY_RUN"
+    line: 'CRON_DAILY_RUN="yes"'
+
+- name: Configurer mail Rkhunter
+  lineinfile:
+    path: /etc/default/rkhunter
+    regexp: "^REPORT_EMAIL"
+    line: 'REPORT_EMAIL="{{ mail_admin }}"'
+
+- name: Configurer mail Logwatch
+  lineinfile:
+    path: /usr/share/logwatch/default.conf/logwatch.conf
+    regexp: "^MailTo"
+    line: "MailTo = {{ mail_admin }}"
+
+- name: Demarrer et activer Fail2ban
+  service:
+    name: fail2ban
+    state: started
+    enabled: yes
+
+- name: Demarrer et activer Portsentry
+  service:
+    name: portsentry
+    state: started
+    enabled: yes

@@ -1,0 +1,6 @@
+---
+ssh_port: 2222
+bantime: 600
+maxretry: 5
+mail_admin: massibenb5@gmail.com
+
